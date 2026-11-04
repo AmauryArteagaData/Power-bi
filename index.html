@@ -1,0 +1,1926 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RUTIX — Torre de Control Logística Multipaís BI</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            rutix: {
+              canvas: '#F8FAFC',
+              dark: '#1C2D4A',
+              navy: '#0F172A',
+              accent: '#EA580C',
+              accentHover: '#C2410C',
+              activeBg: '#FEEBE7',
+              activeText: '#C2410C',
+              success: '#16A34A',
+              warning: '#F59E0B',
+              danger: '#DC2626',
+              cyan: '#06B6D4',
+              blue: '#0284C7',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #F8FAFC;
+      color: #1E293B;
+      -webkit-font-smoothing: antialiased;
+    }
+    
+    .card-rutix {
+      background: #FFFFFF;
+      border-radius: 18px;
+      border: 1px solid #F1F5F9;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02), 0 6px 16px -4px rgba(0, 0, 0, 0.03);
+      transition: all 0.2s ease-in-out;
+    }
+    .card-rutix:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    .nav-item {
+      transition: all 0.15s ease;
+      color: #64748B;
+      font-weight: 500;
+    }
+    .nav-item:hover {
+      background-color: #F8FAFC;
+      color: #0F172A;
+    }
+    .nav-item.nav-active {
+      background-color: #FEEBE7 !important;
+      color: #C2410C !important;
+      font-weight: 600 !important;
+    }
+    .nav-item.nav-active svg {
+      stroke: #EA580C !important;
+      color: #EA580C !important;
+    }
+
+    .badge-pill {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .pill-filter {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 5px 12px;
+      border-radius: 9999px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+
+    /* Mobile emulator frame */
+    #app-container.mobile-mode {
+      max-width: 430px;
+      margin: 1.5rem auto;
+      height: 94vh;
+      border: 12px solid #1E293B;
+      border-radius: 44px;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.35);
+      position: relative;
+    }
+    #app-container.mobile-mode::before {
+      content: '';
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 110px;
+      height: 20px;
+      background: #1E293B;
+      border-radius: 12px;
+      z-index: 50;
+    }
+
+    /* Animated progress bars */
+    .bar-fill {
+      transition: width 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* Modal Backdrop */
+    .modal-backdrop {
+      background-color: rgba(15, 23, 42, 0.45);
+      backdrop-filter: blur(4px);
+    }
+  </style>
+</head>
+<body class="overflow-hidden bg-[#F8FAFC]">
+
+  <div id="app-container" class="flex h-screen w-screen overflow-hidden transition-all duration-300">
+
+    <!-- ============================================================== -->
+    <!-- SIDEBAR DE NAVEGACIÓN -->
+    <!-- ============================================================== -->
+    <aside id="sidebar" class="w-64 bg-white border-r border-slate-200 flex flex-col justify-between shrink-0 transition-all duration-300 z-30 select-none">
+      <div class="flex-1 flex flex-col overflow-y-auto">
+        <!-- Logo RUTIX -->
+        <div class="h-16 flex items-center px-6 border-b border-slate-100 gap-2.5">
+          <div class="flex items-center gap-1.5 cursor-pointer" onclick="navigate('resumen')">
+            <span class="text-2xl font-extrabold tracking-tight text-[#1C2D4A]">RUTI</span>
+            <!-- Stylized X with Cyan and Blue -->
+            <span class="text-2xl font-black text-[#0284C7] relative inline-block">
+              X
+              <span class="absolute top-0 right-0 text-[#06B6D4] text-xs font-black">▲</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Grupo 1: Menú Principal (Vistas Ejecutivas) -->
+        <div class="px-4 py-4">
+          <p class="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Main Menu</p>
+          <nav class="space-y-1">
+            <button onclick="navigate('resumen')" id="nav-resumen" class="w-full flex items-center gap-3 px-3.5 py-2.5 text-xs rounded-xl nav-item nav-active">
+              <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+              <span>Resumen ejecutivo</span>
+            </button>
+            <button onclick="navigate('direccion')" id="nav-direccion" class="w-full flex items-center gap-3 px-3.5 py-2.5 text-xs rounded-xl nav-item">
+              <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+              <span>Dirección General</span>
+            </button>
+            <button onclick="navigate('gerencia')" id="nav-gerencia" class="w-full flex items-center gap-3 px-3.5 py-2.5 text-xs rounded-xl nav-item">
+              <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+              <span>Gerencia de País</span>
+            </button>
+            <button onclick="navigate('operaciones')" id="nav-operaciones" class="w-full flex items-center gap-3 px-3.5 py-2.5 text-xs rounded-xl nav-item">
+              <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+              <span>Operaciones logísticas</span>
+            </button>
+          </nav>
+        </div>
+
+        <!-- Grupo 2: Módulos de KPI Especializados -->
+        <div class="px-4 py-2 border-t border-slate-100">
+          <p class="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Indicadores Clave (KPI)</p>
+          <nav class="space-y-1">
+            <button onclick="navigate('kpi1')" id="nav-kpi1" class="w-full flex items-center gap-3 px-3.5 py-2 text-xs rounded-xl nav-item">
+              <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
+              <span>Seguimiento de envíos</span>
+            </button>
+            <button onclick="navigate('kpi2')" id="nav-kpi2" class="w-full flex items-center gap-3 px-3.5 py-2 text-xs rounded-xl nav-item">
+              <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              <span>Cumplimiento OTD</span>
+            </button>
+            <button onclick="navigate('kpi3')" id="nav-kpi3" class="w-full flex items-center gap-3 px-3.5 py-2 text-xs rounded-xl nav-item">
+              <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              <span>Costos logísticos & ROI</span>
+            </button>
+            <button onclick="navigate('kpi4')" id="nav-kpi4" class="w-full flex items-center gap-3 px-3.5 py-2 text-xs rounded-xl nav-item">
+              <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+              <span>Gestión de incidencias</span>
+            </button>
+          </nav>
+        </div>
+
+        <!-- Grupo 3: Configuración y Soporte -->
+        <div class="px-4 py-2 border-t border-slate-100">
+          <p class="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Configuración</p>
+          <nav class="space-y-1">
+            <button onclick="showInfoToast('Centro de Ayuda RUTIX — Documentación de integración Power BI activa')" class="w-full flex items-center gap-3 px-3.5 py-2 text-xs rounded-xl nav-item">
+              <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              <span>Ayuda y soporte</span>
+            </button>
+            <button onclick="showInfoToast('Panel de Configuración de Modelado DAX y Tokens BI')" class="w-full flex items-center gap-3 px-3.5 py-2 text-xs rounded-xl nav-item">
+              <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path></svg>
+              <span>Configuración</span>
+            </button>
+          </nav>
+        </div>
+      </div>
+
+      <!-- Pie de usuario / Sede -->
+      <div class="p-4 border-t border-slate-100 flex items-center gap-3 bg-white">
+        <div class="w-9 h-9 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-xs shadow-sm">
+          RL
+        </div>
+        <div class="overflow-hidden">
+          <p class="text-xs font-semibold text-slate-900 truncate">Sede Colombia</p>
+          <p class="text-[10px] text-slate-400 font-medium">Torre Multipaís v2.4</p>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ============================================================== -->
+    <!-- ÁREA DE CONTENIDO PRINCIPAL -->
+    <!-- ============================================================== -->
+    <main class="flex-1 flex flex-col overflow-hidden bg-[#F8FAFC]">
+
+      <!-- HEADER NAVBAR -->
+      <header class="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between shrink-0 z-20">
+        <!-- Breadcrumb & Toggle móvil -->
+        <div class="flex items-center gap-3">
+          <button onclick="toggleSidebar()" class="p-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition lg:hidden" title="Alternar Menú">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+          </button>
+          <div class="flex items-center text-xs font-medium text-slate-500 gap-1.5">
+            <span class="font-semibold text-slate-700">RUTIX</span>
+            <span>/</span>
+            <span>Torre de Control Logística</span>
+            <span>/</span>
+            <span id="breadcrumb-title" class="text-slate-900 font-bold">Resumen ejecutivo</span>
+          </div>
+        </div>
+
+        <!-- Buscador Central -->
+        <div class="hidden md:flex items-center relative w-72 lg:w-96">
+          <svg class="w-4 h-4 text-slate-400 absolute left-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+          <input id="global-search" type="text" onkeyup="handleGlobalSearch(event)" placeholder="Buscar envíos, indicadores o incidencias..." class="w-full text-xs pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white transition" />
+        </div>
+
+        <!-- Acciones & Controles RLS -->
+        <div class="flex items-center gap-2">
+          <!-- Switch Modo Táctil / Móvil -->
+          <button onclick="toggleMobileSimulator()" title="Modo Táctil / Simulador Móvil" class="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-full border border-slate-200 transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+          </button>
+
+          <!-- Notificaciones -->
+          <button onclick="showInfoToast('3 alertas activas: 2 demoras en ruta Bogotá-Medellín y 1 caso crítico')" class="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-full border border-slate-200 relative transition" title="Notificaciones del sistema">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+            <span class="w-2 h-2 bg-red-500 rounded-full absolute top-1 right-1"></span>
+          </button>
+
+          <!-- Slicer Temporal -->
+          <div class="relative">
+            <select id="time-slicer" onchange="changeTimePeriod(this.value)" class="text-xs font-semibold bg-white border border-slate-200 rounded-full px-3.5 py-1.5 text-slate-700 cursor-pointer shadow-sm hover:border-slate-300 focus:outline-none transition">
+              <option value="OCT">Oct 2026</option>
+              <option value="SEP">Sep 2026</option>
+              <option value="AGO">Ago 2026</option>
+              <option value="ALL">Todo 2026</option>
+            </select>
+          </div>
+
+          <!-- Selector de Perfil RLS (Row-Level Security) -->
+          <div class="relative">
+            <div class="flex items-center bg-white border border-slate-200 rounded-full px-2 py-0.5 shadow-sm">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2 ml-1"></span>
+              <select id="rls-selector" onchange="applyRLS(this.value)" class="text-xs font-semibold bg-transparent text-slate-800 pr-2 py-1 cursor-pointer focus:outline-none">
+                <option value="CEO">Dirección General</option>
+                <option value="GERENCIA">Gerencia de País</option>
+                <option value="OPERACIONES">Operaciones Logísticas</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- VIEW CANVAS CONTAINER -->
+      <div id="content-scroll" class="flex-1 overflow-y-auto p-6 space-y-6">
+
+        <!-- ============================================================== -->
+        <!-- VISTA 1: RESUMEN EJECUTIVO -->
+        <!-- ============================================================== -->
+        <section id="view-resumen" class="space-y-6">
+          <!-- 4 KPI Cards -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <!-- Card 1: Entregas a tiempo (Navy) -->
+            <div onclick="navigate('kpi2')" class="p-6 rounded-[18px] bg-[#1C2D4A] text-white shadow relative overflow-hidden flex flex-col justify-between cursor-pointer hover:shadow-lg transition">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-slate-300">Entregas a tiempo</span>
+                <span class="w-9 h-9 bg-white/10 rounded-full flex items-center justify-center text-white">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                </span>
+              </div>
+              <div class="mt-6">
+                <div class="text-4xl font-extrabold tracking-tight">94,7%</div>
+                <div class="mt-3 flex items-center justify-between">
+                  <span class="text-[11px] text-slate-400">Meta: 95.0%</span>
+                  <span class="badge-pill bg-[#FEF08A] text-[#854D0E]">En alerta</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 2: Costos Logísticos -->
+            <div onclick="navigate('kpi3')" class="card-rutix p-6 flex flex-col justify-between cursor-pointer">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-slate-500">Costos logísticos</span>
+                <span class="w-9 h-9 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center font-bold">
+                  $
+                </span>
+              </div>
+              <div class="mt-6">
+                <div class="text-4xl font-extrabold text-slate-900">$372 <span class="text-2xl font-bold">M</span></div>
+                <div class="mt-3 flex items-center justify-between">
+                  <span class="text-[11px] text-slate-400">Presupuesto: $380 M</span>
+                  <span class="badge-pill bg-[#DCFCE7] text-[#166534]">Meta cumplida</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 3: Incidentes Logísticos -->
+            <div onclick="navigate('kpi4')" class="card-rutix p-6 flex flex-col justify-between cursor-pointer">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-slate-500">Incidentes logísticos</span>
+                <span class="w-9 h-9 bg-amber-50 text-amber-600 rounded-full flex items-center justify-center">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                </span>
+              </div>
+              <div class="mt-6">
+                <div class="text-4xl font-extrabold text-slate-900">37</div>
+                <div class="mt-3 flex items-center justify-between">
+                  <span class="text-[11px] text-slate-400">8 de severidad alta</span>
+                  <span class="badge-pill bg-[#DCFCE7] text-[#166534]">-12% mes</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 4: Satisfacción Cliente -->
+            <div class="card-rutix p-6 flex flex-col justify-between">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-slate-500">Satisfacción del cliente</span>
+                <span class="w-9 h-9 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </span>
+              </div>
+              <div class="mt-6">
+                <div class="text-4xl font-extrabold text-slate-900">4,5 <span class="text-xl font-medium text-slate-400">/ 5</span></div>
+                <div class="mt-3 flex items-center justify-between">
+                  <span class="text-[11px] text-slate-400">Encuestas: 420</span>
+                  <span class="badge-pill bg-[#DCFCE7] text-[#166534]">Meta cumplida</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Fila Central: Gráficos de Evolución y Estado -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Line Chart: Evolución OTD -->
+            <div class="card-rutix p-6 lg:col-span-2 flex flex-col justify-between">
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <h3 class="text-sm font-bold text-slate-800">Evolución del cumplimiento de entregas</h3>
+                  <p class="text-xs text-slate-400">Objetivo estipulado en SLA: 95.0%</p>
+                </div>
+                <select class="text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-slate-600 font-medium cursor-pointer">
+                  <option>Semanal</option>
+                  <option>Diario</option>
+                </select>
+              </div>
+              <div class="h-64 relative">
+                <canvas id="chart-resumen-line"></canvas>
+              </div>
+            </div>
+
+            <!-- Donut Chart: Estado Envíos -->
+            <div class="card-rutix p-6 flex flex-col justify-between">
+              <div class="flex items-center justify-between mb-2">
+                <h3 class="text-sm font-bold text-slate-800">Estado de los envíos</h3>
+                <span class="text-xs text-slate-400 font-medium">Oct 2026</span>
+              </div>
+              <div class="relative h-52 flex items-center justify-center">
+                <canvas id="chart-resumen-donut"></canvas>
+                <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  <span class="text-3xl font-extrabold text-slate-900">1.240</span>
+                  <span class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">envíos</span>
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-2.5 mt-4 pt-3 border-t border-slate-100 text-xs">
+                <div class="flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-full bg-[#1C2D4A]"></span>
+                  <span class="text-slate-600 font-medium">Entregados · 72%</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-full bg-[#EA580C]"></span>
+                  <span class="text-slate-600 font-medium">En tránsito · 14%</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-full bg-[#84CC16]"></span>
+                  <span class="text-slate-600 font-medium">Pendientes · 9%</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-full bg-[#3B82F6]"></span>
+                  <span class="text-slate-600 font-medium">Cancelados · 5%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Fila Inferior: Accesos Rápidos y Tabla de Envíos -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Indicadores Rápidos -->
+            <div class="space-y-3">
+              <div onclick="navigate('kpi2')" class="card-rutix p-4 flex items-center justify-between cursor-pointer hover:border-slate-300">
+                <div class="flex items-center gap-3">
+                  <span class="p-2.5 bg-blue-50 text-blue-600 rounded-xl">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                  </span>
+                  <div>
+                    <h4 class="text-xs font-bold text-slate-800">Cumplimiento de entregas (OTD)</h4>
+                    <p class="text-[11px] text-slate-400">Control granular de SLAs y desviaciones</p>
+                  </div>
+                </div>
+                <span class="text-slate-400 font-bold text-sm">›</span>
+              </div>
+
+              <div onclick="navigate('kpi3')" class="card-rutix p-4 flex items-center justify-between cursor-pointer hover:border-slate-300">
+                <div class="flex items-center gap-3">
+                  <span class="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                  </span>
+                  <div>
+                    <h4 class="text-xs font-bold text-slate-800">Control de costos logísticos</h4>
+                    <p class="text-[11px] text-slate-400">Ejecución vs Budget y ROI del sistema</p>
+                  </div>
+                </div>
+                <span class="text-slate-400 font-bold text-sm">›</span>
+              </div>
+
+              <div onclick="navigate('kpi4')" class="card-rutix p-4 flex items-center justify-between cursor-pointer hover:border-slate-300">
+                <div class="flex items-center gap-3">
+                  <span class="p-2.5 bg-red-50 text-red-600 rounded-xl">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                  </span>
+                  <div>
+                    <h4 class="text-xs font-bold text-slate-800">Gestión de incidencias</h4>
+                    <p class="text-[11px] text-slate-400">Severidad de anomalías en carretera</p>
+                  </div>
+                </div>
+                <span class="text-slate-400 font-bold text-sm">›</span>
+              </div>
+            </div>
+
+            <!-- Tabla de envíos e incidentes recientes -->
+            <div class="card-rutix p-5 lg:col-span-2 flex flex-col justify-between">
+              <div class="flex items-center justify-between mb-3">
+                <h3 class="text-sm font-bold text-slate-800">Envíos e incidencias recientes</h3>
+                <button onclick="navigate('operaciones')" class="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1">
+                  Ver todos ↗
+                </button>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                  <thead>
+                    <tr class="text-slate-400 border-b border-slate-100 pb-2">
+                      <th class="font-medium pb-2">Descripción</th>
+                      <th class="font-medium pb-2">Fecha</th>
+                      <th class="font-medium pb-2">Valor (COP)</th>
+                      <th class="font-medium pb-2 text-right">Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-50 text-slate-700">
+                    <tr class="hover:bg-slate-50 transition cursor-pointer" onclick="navigate('operaciones')">
+                      <td class="py-2.5 font-medium flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-amber-500"></span>Envío registrado GD-20418
+                      </td>
+                      <td class="py-2.5 text-slate-400">25 Oct, 14:30</td>
+                      <td class="py-2.5 font-semibold">$450.000</td>
+                      <td class="py-2.5 text-right"><span class="badge-pill bg-amber-50 text-amber-700">En tránsito</span></td>
+                    </tr>
+                    <tr class="hover:bg-slate-50 transition cursor-pointer" onclick="navigate('operaciones')">
+                      <td class="py-2.5 font-medium flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>Entrega confirmada GD-20392
+                      </td>
+                      <td class="py-2.5 text-slate-400">25 Oct, 12:15</td>
+                      <td class="py-2.5 font-semibold">$320.000</td>
+                      <td class="py-2.5 text-right"><span class="badge-pill bg-emerald-50 text-emerald-700">Entregado</span></td>
+                    </tr>
+                    <tr class="hover:bg-slate-50 transition cursor-pointer" onclick="navigate('operaciones')">
+                      <td class="py-2.5 font-medium flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-red-500"></span>Incidente por retraso GD-20452
+                      </td>
+                      <td class="py-2.5 text-slate-400">25 Oct, 09:40</td>
+                      <td class="py-2.5 font-semibold">$180.000</td>
+                      <td class="py-2.5 text-right"><span class="badge-pill bg-red-50 text-red-700">En revisión</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- VISTA 2: DIRECCIÓN GENERAL (CEO VIEW) -->
+        <!-- ============================================================== -->
+        <section id="view-direccion" class="space-y-6 hidden">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Gráfico 1: Costos Logísticos -->
+            <div class="card-rutix p-6">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-base font-bold text-slate-900">Costos logísticos (M COP)</h3>
+                <span class="text-xs font-medium text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">meta 380</span>
+              </div>
+              <div class="h-64 relative">
+                <canvas id="chart-ceo-costos"></canvas>
+              </div>
+            </div>
+
+            <!-- Gráfico 2: Satisfacción CSAT -->
+            <div class="card-rutix p-6">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-base font-bold text-slate-900">Satisfacción del cliente</h3>
+                <span class="text-xs font-medium text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">meta 4.5</span>
+              </div>
+              <div class="h-64 relative">
+                <canvas id="chart-ceo-csat"></canvas>
+              </div>
+            </div>
+
+            <!-- Gráfico 3: Incidentes Históricos (Bar Chart) -->
+            <div class="card-rutix p-6">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-base font-bold text-slate-900">Incidentes por mes</h3>
+                <span class="text-xs text-slate-400 font-medium">Mayo – Octubre</span>
+              </div>
+              <div class="space-y-3.5 pt-2">
+                <!-- May -->
+                <div class="flex items-center text-xs">
+                  <span class="w-10 text-slate-400 font-medium">May</span>
+                  <div class="flex-1 bg-slate-100 rounded-full h-4 mx-3 overflow-hidden">
+                    <div class="bg-[#E2E8F0] h-full rounded-full" style="width: 100%;"></div>
+                  </div>
+                  <span class="w-8 text-right font-bold text-slate-600">58</span>
+                </div>
+                <!-- Jun -->
+                <div class="flex items-center text-xs">
+                  <span class="w-10 text-slate-400 font-medium">Jun</span>
+                  <div class="flex-1 bg-slate-100 rounded-full h-4 mx-3 overflow-hidden">
+                    <div class="bg-[#E2E8F0] h-full rounded-full" style="width: 89%;"></div>
+                  </div>
+                  <span class="w-8 text-right font-bold text-slate-600">52</span>
+                </div>
+                <!-- Jul -->
+                <div class="flex items-center text-xs">
+                  <span class="w-10 text-slate-400 font-medium">Jul</span>
+                  <div class="flex-1 bg-slate-100 rounded-full h-4 mx-3 overflow-hidden">
+                    <div class="bg-[#E2E8F0] h-full rounded-full" style="width: 84%;"></div>
+                  </div>
+                  <span class="w-8 text-right font-bold text-slate-600">49</span>
+                </div>
+                <!-- Ago -->
+                <div class="flex items-center text-xs">
+                  <span class="w-10 text-slate-400 font-medium">Ago</span>
+                  <div class="flex-1 bg-slate-100 rounded-full h-4 mx-3 overflow-hidden">
+                    <div class="bg-[#E2E8F0] h-full rounded-full" style="width: 77%;"></div>
+                  </div>
+                  <span class="w-8 text-right font-bold text-slate-600">45</span>
+                </div>
+                <!-- Sep -->
+                <div class="flex items-center text-xs">
+                  <span class="w-10 text-slate-400 font-medium">Sep</span>
+                  <div class="flex-1 bg-slate-100 rounded-full h-4 mx-3 overflow-hidden">
+                    <div class="bg-[#E2E8F0] h-full rounded-full" style="width: 70%;"></div>
+                  </div>
+                  <span class="w-8 text-right font-bold text-slate-600">41</span>
+                </div>
+                <!-- Oct (Highlighted in Orange) -->
+                <div class="flex items-center text-xs">
+                  <span class="w-10 text-slate-900 font-bold">Oct</span>
+                  <div class="flex-1 bg-slate-100 rounded-full h-4 mx-3 overflow-hidden">
+                    <div class="bg-[#EA580C] h-full rounded-full" style="width: 63%;"></div>
+                  </div>
+                  <span class="w-8 text-right font-black text-[#EA580C]">37</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Gráfico 4: Modelo Financiero ROI RUTIX -->
+            <div class="card-rutix p-6 flex flex-col justify-between">
+              <div>
+                <h3 class="text-base font-bold text-slate-900 mb-4">Modelo financiero ROI RUTIX</h3>
+                <div class="grid grid-cols-2 gap-4">
+                  <!-- ROI -->
+                  <div class="p-4 bg-slate-50/80 rounded-2xl border border-slate-100">
+                    <span class="text-[11px] font-bold uppercase text-slate-400">ROI</span>
+                    <p class="text-3xl font-extrabold text-slate-900 mt-1">29,04 <span class="text-xl">%</span></p>
+                  </div>
+                  <!-- TIR -->
+                  <div class="p-4 bg-slate-50/80 rounded-2xl border border-slate-100">
+                    <span class="text-[11px] font-bold uppercase text-slate-400">TIR</span>
+                    <p class="text-3xl font-extrabold text-slate-900 mt-1">29,04 %</p>
+                  </div>
+                  <!-- Payback -->
+                  <div class="p-4 bg-slate-50/80 rounded-2xl border border-slate-100">
+                    <span class="text-[11px] font-bold uppercase text-slate-400">Payback</span>
+                    <p class="text-3xl font-extrabold text-slate-900 mt-1">0,78 <span class="text-base font-medium text-slate-500">años</span></p>
+                  </div>
+                  <!-- VPN -->
+                  <div class="p-4 bg-slate-50/80 rounded-2xl border border-slate-100">
+                    <span class="text-[11px] font-bold uppercase text-slate-400">VPN @ 10 %</span>
+                    <p class="text-2xl font-extrabold text-slate-900 mt-1">$6.706.740</p>
+                  </div>
+                </div>
+              </div>
+              <div class="mt-6 pt-3 border-t border-slate-100 text-xs text-slate-500 flex flex-wrap justify-between gap-2">
+                <span>Inversión <b>$38.747.805</b></span>
+                <span>Beneficios proyectados <b>$50.000.000</b></span>
+                <span class="text-emerald-700 font-semibold">Beneficio neto $11.252.195 COP</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- VISTA 3: GERENCIA DE PAÍS -->
+        <!-- ============================================================== -->
+        <section id="view-gerencia" class="space-y-6 hidden">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-xs text-slate-500">Vista filtrada por perfil: <span class="font-semibold text-slate-700">Dirección General</span></p>
+            </div>
+            <div class="relative">
+              <select id="gerencia-city-filter" onchange="filterGerenciaCity(this.value)" class="text-xs bg-white border border-slate-200 rounded-full px-4 py-1.5 font-semibold text-slate-700 shadow-sm cursor-pointer hover:border-slate-300 focus:outline-none">
+                <option value="TODAS">Todas</option>
+                <option value="BOGOTA">Bogotá</option>
+                <option value="MEDELLIN">Medellín</option>
+                <option value="CARTAGENA">Cartagena</option>
+                <option value="CALI">Cali</option>
+                <option value="BARRANQUILLA">Barranquilla</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Entregas a tiempo por ciudad -->
+            <div class="card-rutix p-6">
+              <h3 class="text-base font-bold text-slate-900 mb-6">Entregas a tiempo por ciudad (%)</h3>
+              <div class="space-y-4">
+                <!-- Cartagena -->
+                <div class="flex items-center text-xs">
+                  <span class="w-24 text-slate-500 font-medium">Cartagena</span>
+                  <div class="flex-1 bg-slate-100 rounded-full h-5 mx-3 overflow-hidden">
+                    <div class="bg-[#16A34A] h-full rounded-full flex items-center justify-end pr-2 text-white font-bold text-[10px]" style="width: 95.9%;"></div>
+                  </div>
+                  <span class="w-12 text-right font-bold text-slate-700">95.9%</span>
+                </div>
+                <!-- Bogotá -->
+                <div class="flex items-center text-xs">
+                  <span class="w-24 text-slate-500 font-medium">Bogotá</span>
+                  <div class="flex-1 bg-slate-100 rounded-full h-5 mx-3 overflow-hidden">
+                    <div class="bg-[#EAB308] h-full rounded-full flex items-center justify-end pr-2 text-white font-bold text-[10px]" style="width: 93.9%;"></div>
+                  </div>
+                  <span class="w-12 text-right font-bold text-slate-700">93.9%</span>
+                </div>
+                <!-- Medellín -->
+                <div class="flex items-center text-xs">
+                  <span class="w-24 text-slate-500 font-medium">Medellín</span>
+                  <div class="flex-1 bg-slate-100 rounded-full h-5 mx-3 overflow-hidden">
+                    <div class="bg-[#16A34A] h-full rounded-full flex items-center justify-end pr-2 text-white font-bold text-[10px]" style="width: 95.3%;"></div>
+                  </div>
+                  <span class="w-12 text-right font-bold text-slate-700">95.3%</span>
+                </div>
+                <!-- Cali -->
+                <div class="flex items-center text-xs">
+                  <span class="w-24 text-slate-500 font-medium">Cali</span>
+                  <div class="flex-1 bg-slate-100 rounded-full h-5 mx-3 overflow-hidden">
+                    <div class="bg-[#EAB308] h-full rounded-full flex items-center justify-end pr-2 text-white font-bold text-[10px]" style="width: 93.2%;"></div>
+                  </div>
+                  <span class="w-12 text-right font-bold text-slate-700">93.2%</span>
+                </div>
+                <!-- Barranquilla -->
+                <div class="flex items-center text-xs">
+                  <span class="w-24 text-slate-500 font-medium">Barranquilla</span>
+                  <div class="flex-1 bg-slate-100 rounded-full h-5 mx-3 overflow-hidden">
+                    <div class="bg-[#16A34A] h-full rounded-full flex items-center justify-end pr-2 text-white font-bold text-[10px]" style="width: 95.1%;"></div>
+                  </div>
+                  <span class="w-12 text-right font-bold text-slate-700">95.1%</span>
+                </div>
+              </div>
+              <div class="mt-6 pt-3 border-t border-slate-100 flex items-center gap-4 text-xs text-slate-500">
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#16A34A]"></span> Meta SLA cumplida (&ge;95%)</span>
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#EAB308]"></span> Desviación (&lt;95%)</span>
+              </div>
+            </div>
+
+            <!-- Participación en el volumen -->
+            <div class="card-rutix p-6">
+              <h3 class="text-base font-bold text-slate-900 mb-6">Participación en el volumen (%)</h3>
+              <div class="space-y-4">
+                <!-- Cartagena -->
+                <div class="flex items-center text-xs">
+                  <span class="w-24 text-slate-500 font-medium">Cartagena</span>
+                  <div class="flex-1 bg-slate-100 rounded-full h-5 mx-3 overflow-hidden">
+                    <div class="bg-[#3B82F6] h-full rounded-full" style="width: 22%;"></div>
+                  </div>
+                  <span class="w-12 text-right font-bold text-slate-700">22%</span>
+                </div>
+                <!-- Bogotá -->
+                <div class="flex items-center text-xs">
+                  <span class="w-24 text-slate-500 font-medium">Bogotá</span>
+                  <div class="flex-1 bg-slate-100 rounded-full h-5 mx-3 overflow-hidden">
+                    <div class="bg-[#3B82F6] h-full rounded-full" style="width: 31%;"></div>
+                  </div>
+                  <span class="w-12 text-right font-bold text-slate-700">31%</span>
+                </div>
+                <!-- Medellín -->
+                <div class="flex items-center text-xs">
+                  <span class="w-24 text-slate-500 font-medium">Medellín</span>
+                  <div class="flex-1 bg-slate-100 rounded-full h-5 mx-3 overflow-hidden">
+                    <div class="bg-[#3B82F6] h-full rounded-full" style="width: 19%;"></div>
+                  </div>
+                  <span class="w-12 text-right font-bold text-slate-700">19%</span>
+                </div>
+                <!-- Cali -->
+                <div class="flex items-center text-xs">
+                  <span class="w-24 text-slate-500 font-medium">Cali</span>
+                  <div class="flex-1 bg-slate-100 rounded-full h-5 mx-3 overflow-hidden">
+                    <div class="bg-[#3B82F6] h-full rounded-full" style="width: 15%;"></div>
+                  </div>
+                  <span class="w-12 text-right font-bold text-slate-700">15%</span>
+                </div>
+                <!-- Barranquilla -->
+                <div class="flex items-center text-xs">
+                  <span class="w-24 text-slate-500 font-medium">Barranquilla</span>
+                  <div class="flex-1 bg-slate-100 rounded-full h-5 mx-3 overflow-hidden">
+                    <div class="bg-[#3B82F6] h-full rounded-full" style="width: 13%;"></div>
+                  </div>
+                  <span class="w-12 text-right font-bold text-slate-700">13%</span>
+                </div>
+              </div>
+              <div class="mt-6 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
+                <span>Total de operaciones: <b>1.240 despachos</b></span>
+                <span>Hub principal: <b>Bogotá D.C.</b></span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- VISTA 4: OPERACIONES LOGÍSTICAS -->
+        <!-- ============================================================== -->
+        <section id="view-operaciones" class="space-y-6 hidden">
+          <div class="card-rutix p-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+              <div>
+                <h2 class="text-lg font-bold text-slate-900">Seguimiento operativo por guía de despacho</h2>
+                <p class="text-xs text-slate-400">Monitoreo en ruta en tiempo real y asignación de transportistas</p>
+              </div>
+              <!-- Botones de filtro de Severidad -->
+              <div class="flex items-center gap-2">
+                <button onclick="filterOperaciones('TODAS')" id="btn-sev-TODAS" class="pill-filter bg-[#1C2D4A] text-white shadow-sm">Todas</button>
+                <button onclick="filterOperaciones('ALTA')" id="btn-sev-ALTA" class="pill-filter bg-white text-slate-700 border border-slate-200 hover:bg-slate-50">Alta</button>
+                <button onclick="filterOperaciones('MEDIA')" id="btn-sev-MEDIA" class="pill-filter bg-white text-slate-700 border border-slate-200 hover:bg-slate-50">Media</button>
+                <button onclick="filterOperaciones('BAJA')" id="btn-sev-BAJA" class="pill-filter bg-white text-slate-700 border border-slate-200 hover:bg-slate-50">Baja</button>
+              </div>
+            </div>
+
+            <!-- Tabla de Operaciones -->
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead>
+                  <tr class="border-b border-slate-100 text-slate-400">
+                    <th class="pb-3.5 font-bold uppercase tracking-wider text-[11px]">Guía</th>
+                    <th class="pb-3.5 font-bold uppercase tracking-wider text-[11px]">Transportista</th>
+                    <th class="pb-3.5 font-bold uppercase tracking-wider text-[11px]">Ruta</th>
+                    <th class="pb-3.5 font-bold uppercase tracking-wider text-[11px]">Severidad</th>
+                    <th class="pb-3.5 font-bold uppercase tracking-wider text-[11px]">Incidente</th>
+                    <th class="pb-3.5 font-bold uppercase tracking-wider text-[11px] text-right">Acción</th>
+                  </tr>
+                </thead>
+                <tbody id="operaciones-table-body" class="divide-y divide-slate-100 text-slate-700">
+                  <!-- Dynamically Rendered -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- VISTA 5: SEGUIMIENTO DE ENVÍOS (KPI 1) -->
+        <!-- ============================================================== -->
+        <section id="view-kpi1" class="space-y-6 hidden">
+          <!-- 4 Cards Top -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <!-- Envíos Monitoreados (Navy) -->
+            <div class="p-6 rounded-[18px] bg-[#1C2D4A] text-white shadow flex flex-col justify-between">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-slate-300">Envíos Monitoreados</span>
+                <span class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
+                  <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
+                </span>
+              </div>
+              <div class="mt-4">
+                <div class="text-4xl font-extrabold tracking-tight">1.240</div>
+                <div class="mt-2.5 flex items-center justify-between text-xs">
+                  <span class="text-slate-400">Promedio: 124/día</span>
+                  <span class="badge-pill bg-emerald-500/20 text-emerald-300">100% Ingesta</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Cobertura Operativa -->
+            <div class="card-rutix p-6 flex flex-col justify-between">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-slate-500">Cobertura Operativa</span>
+                <span class="w-8 h-8 rounded-full bg-cyan-50 text-cyan-600 flex items-center justify-center">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                </span>
+              </div>
+              <div class="mt-4">
+                <div class="text-4xl font-extrabold text-slate-900">5 Ciudades</div>
+                <div class="mt-2.5 text-xs text-slate-400">Sede Principal Colombia</div>
+              </div>
+            </div>
+
+            <!-- Peso Carga Total -->
+            <div class="card-rutix p-6 flex flex-col justify-between">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-slate-500">Peso Carga Total</span>
+                <span class="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs">
+                  Kg
+                </span>
+              </div>
+              <div class="mt-4">
+                <div class="text-4xl font-extrabold text-slate-900">18.4 Ton</div>
+                <div class="mt-2.5 text-xs text-emerald-600 font-semibold">+12% vs semana previa</div>
+              </div>
+            </div>
+
+            <!-- Valor Carga Movilizada -->
+            <div class="card-rutix p-6 flex flex-col justify-between">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-slate-500">Valor Carga Movilizada</span>
+                <span class="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xs">
+                  $
+                </span>
+              </div>
+              <div class="mt-4">
+                <div class="text-3xl font-extrabold text-slate-900 truncate">$558.000.000</div>
+                <div class="mt-2.5 text-xs text-slate-400">COP Totales Monitoreados</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2 Gráficos: Evolución y Volumen por Ciudad -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Evolución Diaria -->
+            <div class="card-rutix p-6 lg:col-span-2">
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <h3 class="text-sm font-bold text-slate-900">Evolución Diaria de Envíos Monitoreados</h3>
+                  <p class="text-xs text-slate-400">Filtro Slicer Activo: Octubre 16 – Octubre 25</p>
+                </div>
+                <button onclick="showInfoToast('Slicer temporal recalculado')" class="pill-filter bg-slate-100 text-slate-700 hover:bg-slate-200">
+                  <svg class="w-3 h-3 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clip-rule="evenodd"></path></svg>
+                  Slicer Temporal
+                </button>
+              </div>
+              <div class="h-64 relative">
+                <canvas id="chart-kpi1-evolucion"></canvas>
+              </div>
+            </div>
+
+            <!-- Volumen por Ciudad -->
+            <div class="card-rutix p-6">
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <h3 class="text-sm font-bold text-slate-900">Volumen por Ciudad</h3>
+                  <p class="text-xs text-slate-400">Drill-Down Activo a CEDIS</p>
+                </div>
+                <button onclick="showInfoToast('Drill-down activo: Explorando sub-rutas metropolitanas')" class="pill-filter bg-slate-100 text-slate-700 hover:bg-slate-200">
+                  ⤵ Drill-Down
+                </button>
+              </div>
+              <div class="space-y-4 pt-3">
+                <!-- Bogotá DC -->
+                <div class="flex items-center text-xs">
+                  <span class="w-24 text-slate-600 font-medium truncate">Bogotá DC</span>
+                  <div class="flex-1 bg-slate-100 rounded-full h-4 mx-2 overflow-hidden">
+                    <div class="bg-[#0F172A] h-full rounded-full" style="width: 100%;"></div>
+                  </div>
+                  <span class="w-8 text-right font-bold text-slate-800">450</span>
+                </div>
+                <!-- Medellín -->
+                <div class="flex items-center text-xs">
+                  <span class="w-24 text-slate-600 font-medium truncate">Medellín</span>
+                  <div class="flex-1 bg-slate-100 rounded-full h-4 mx-2 overflow-hidden">
+                    <div class="bg-[#38BDF8] h-full rounded-full" style="width: 71%;"></div>
+                  </div>
+                  <span class="w-8 text-right font-bold text-slate-800">320</span>
+                </div>
+                <!-- Cartagena -->
+                <div class="flex items-center text-xs">
+                  <span class="w-24 text-slate-600 font-medium truncate">Cartagena</span>
+                  <div class="flex-1 bg-slate-100 rounded-full h-4 mx-2 overflow-hidden">
+                    <div class="bg-[#38BDF8] h-full rounded-full" style="width: 47%;"></div>
+                  </div>
+                  <span class="w-8 text-right font-bold text-slate-800">210</span>
+                </div>
+                <!-- Cali -->
+                <div class="flex items-center text-xs">
+                  <span class="w-24 text-slate-600 font-medium truncate">Cali</span>
+                  <div class="flex-1 bg-slate-100 rounded-full h-4 mx-2 overflow-hidden">
+                    <div class="bg-[#2DD4BF] h-full rounded-full" style="width: 31%;"></div>
+                  </div>
+                  <span class="w-8 text-right font-bold text-slate-800">140</span>
+                </div>
+                <!-- Barranquilla -->
+                <div class="flex items-center text-xs">
+                  <span class="w-24 text-slate-600 font-medium truncate">Barranquilla</span>
+                  <div class="flex-1 bg-slate-100 rounded-full h-4 mx-2 overflow-hidden">
+                    <div class="bg-[#2DD4BF] h-full rounded-full" style="width: 27%;"></div>
+                  </div>
+                  <span class="w-8 text-right font-bold text-slate-800">120</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- VISTA 6: ENTREGAS A TIEMPO - OTD (KPI 2) -->
+        <!-- ============================================================== -->
+        <section id="view-kpi2" class="space-y-6 hidden">
+          <!-- 3 Tarjetas con bordes decorativos laterales -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+            <!-- Cumplimiento OTD (Borde Amarillo) -->
+            <div class="card-rutix p-6 border-l-4 border-l-[#EAB308]">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-slate-500">Cumplimiento OTD</span>
+                <span class="badge-pill bg-amber-50 text-amber-700">Meta: 95.0%</span>
+              </div>
+              <div class="mt-4">
+                <div class="text-4xl font-extrabold text-slate-900">92.5%</div>
+                <div class="mt-3 text-xs text-amber-700 font-semibold flex items-center gap-1">
+                  <span>▲ -2.5% por debajo de la meta SLA</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Entregados a Tiempo (Borde Verde) -->
+            <div class="card-rutix p-6 border-l-4 border-l-[#16A34A]">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-slate-500">Entregados a Tiempo</span>
+                <span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs">✓</span>
+              </div>
+              <div class="mt-4">
+                <div class="text-4xl font-extrabold text-slate-900">1.147</div>
+                <div class="mt-3 text-xs text-slate-400">Unidades conformes de 1.240</div>
+              </div>
+            </div>
+
+            <!-- Tiempo Prom. Tránsito (Borde Azul) -->
+            <div class="card-rutix p-6 border-l-4 border-l-[#0284C7]">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-slate-500">Tiempo Prom. Tránsito</span>
+                <span class="w-6 h-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs">⏱</span>
+              </div>
+              <div class="mt-4">
+                <div class="text-4xl font-extrabold text-slate-900">1.8 Días</div>
+                <div class="mt-3 text-xs text-slate-400">Promesa SLA promedio: 1.5 Días</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2 Gráficos: Línea de meta y Transportistas con Cross-Filtering -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="card-rutix p-6">
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <h3 class="text-sm font-bold text-slate-900">Evolución Diaria OTD (%) vs SLA (95%)</h3>
+                  <p class="text-xs text-slate-400">Línea de tendencia de cumplimiento</p>
+                </div>
+                <span class="pill-filter bg-blue-50 text-blue-700">◎ Target Line SLA</span>
+              </div>
+              <div class="h-64 relative">
+                <canvas id="chart-kpi2-otdline"></canvas>
+              </div>
+            </div>
+
+            <div class="card-rutix p-6">
+              <div class="flex items-center justify-between mb-2">
+                <div>
+                  <h3 class="text-sm font-bold text-slate-900">OTD por Transportista</h3>
+                  <p class="text-xs text-slate-400">Haz clic en un transportista para filtrar</p>
+                </div>
+                <span class="pill-filter bg-slate-100 text-slate-700">↳ Cross-Filter</span>
+              </div>
+              <div class="space-y-4 pt-3" id="transportistas-bars-container">
+                <!-- TransLogix -->
+                <div onclick="handleCrossFilterTransportista('TransLogix', 96.2)" class="flex items-center text-xs cursor-pointer hover:bg-slate-50 p-1 rounded-lg transition">
+                  <span class="w-24 text-slate-600 font-medium">TransLogix</span>
+                  <div class="flex-1 bg-slate-100 rounded-full h-4 mx-2 overflow-hidden">
+                    <div class="bg-[#16A34A] h-full rounded-full" style="width: 96.2%;"></div>
+                  </div>
+                  <span class="w-12 text-right font-bold text-slate-800">96.2%</span>
+                </div>
+                <!-- Servirápido -->
+                <div onclick="handleCrossFilterTransportista('Servirápido', 94.5)" class="flex items-center text-xs cursor-pointer hover:bg-slate-50 p-1 rounded-lg transition">
+                  <span class="w-24 text-slate-600 font-medium">Servirápido</span>
+                  <div class="flex-1 bg-slate-100 rounded-full h-4 mx-2 overflow-hidden">
+                    <div class="bg-[#EAB308] h-full rounded-full" style="width: 94.5%;"></div>
+                  </div>
+                  <span class="w-12 text-right font-bold text-slate-800">94.5%</span>
+                </div>
+                <!-- CargaExpress -->
+                <div onclick="handleCrossFilterTransportista('CargaExpress', 92.0)" class="flex items-center text-xs cursor-pointer hover:bg-slate-50 p-1 rounded-lg transition">
+                  <span class="w-24 text-slate-600 font-medium">CargaExpress</span>
+                  <div class="flex-1 bg-slate-100 rounded-full h-4 mx-2 overflow-hidden">
+                    <div class="bg-[#F97316] h-full rounded-full" style="width: 92.0%;"></div>
+                  </div>
+                  <span class="w-12 text-right font-bold text-slate-800">92.0%</span>
+                </div>
+                <!-- EnvíosCo -->
+                <div onclick="handleCrossFilterTransportista('EnvíosCo', 89.8)" class="flex items-center text-xs cursor-pointer hover:bg-slate-50 p-1 rounded-lg transition">
+                  <span class="w-24 text-slate-600 font-medium">EnvíosCo</span>
+                  <div class="flex-1 bg-slate-100 rounded-full h-4 mx-2 overflow-hidden">
+                    <div class="bg-[#EF4444] h-full rounded-full" style="width: 89.8%;"></div>
+                  </div>
+                  <span class="w-12 text-right font-bold text-slate-800">89.8%</span>
+                </div>
+                <!-- Flota Local -->
+                <div onclick="handleCrossFilterTransportista('Flota Local', 88.0)" class="flex items-center text-xs cursor-pointer hover:bg-slate-50 p-1 rounded-lg transition">
+                  <span class="w-24 text-slate-600 font-medium">Flota Local</span>
+                  <div class="flex-1 bg-slate-100 rounded-full h-4 mx-2 overflow-hidden">
+                    <div class="bg-[#DC2626] h-full rounded-full" style="width: 88.0%;"></div>
+                  </div>
+                  <span class="w-12 text-right font-bold text-slate-800">88.0%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- VISTA 7: COSTOS LOGÍSTICOS & ROI (KPI 3) -->
+        <!-- ============================================================== -->
+        <section id="view-kpi3" class="space-y-6 hidden">
+          <!-- 4 Cards Top -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <!-- Costo Logístico Total -->
+            <div class="card-rutix p-6 flex flex-col justify-between">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-slate-500">Costo Logístico Total</span>
+                <span class="w-7 h-7 bg-cyan-50 text-cyan-600 rounded-lg flex items-center justify-center text-xs">💳</span>
+              </div>
+              <div class="mt-4">
+                <div class="text-3xl font-extrabold text-slate-900">$48.600.000</div>
+                <div class="mt-2.5 text-xs text-slate-400">COP Operación Periodo</div>
+              </div>
+            </div>
+
+            <!-- Inversión Sistema -->
+            <div class="card-rutix p-6 flex flex-col justify-between">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-slate-500">Inversión Sistema</span>
+                <span class="w-7 h-7 bg-red-50 text-red-500 rounded-lg flex items-center justify-center text-xs">📄</span>
+              </div>
+              <div class="mt-4">
+                <div class="text-3xl font-extrabold text-slate-900">$38.747.805</div>
+                <div class="mt-2.5 text-xs text-slate-400">Base Excel ROI RUTIX</div>
+              </div>
+            </div>
+
+            <!-- Beneficios Proyectados -->
+            <div class="card-rutix p-6 flex flex-col justify-between">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-slate-500">Beneficios Proyectados</span>
+                <span class="w-7 h-7 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center text-xs">📈</span>
+              </div>
+              <div class="mt-4">
+                <div class="text-3xl font-extrabold text-slate-900">$50.000.000</div>
+                <div class="mt-2.5 text-xs text-slate-400">Ahorro & Optimización</div>
+              </div>
+            </div>
+
+            <!-- ROI Calculado (Green Solid) -->
+            <div class="p-6 rounded-[18px] bg-[#16A34A] text-white shadow flex flex-col justify-between">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-emerald-100">ROI Calculado (Excel)</span>
+                <span class="w-7 h-7 bg-white/20 rounded-lg flex items-center justify-center font-bold text-xs">%</span>
+              </div>
+              <div class="mt-4">
+                <div class="text-4xl font-extrabold tracking-tight">29.04%</div>
+                <div class="mt-2.5 text-xs text-emerald-100">Payback: 0.78 Años (~9.3 meses)</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2 Gráficos de Costos -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Desglose de Costos -->
+            <div class="card-rutix p-6">
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <h3 class="text-sm font-bold text-slate-900">Desglose de Costos Logísticos ($48.6M COP)</h3>
+                </div>
+                <span class="pill-filter bg-blue-50 text-blue-700">📊 Waterfall</span>
+              </div>
+              <div class="space-y-4 pt-3">
+                <!-- Fletes Base -->
+                <div class="flex items-center text-xs">
+                  <span class="w-28 text-slate-600 font-medium truncate">Fletes Base</span>
+                  <div class="flex-1 bg-slate-100 rounded-full h-4 mx-3 overflow-hidden">
+                    <div class="bg-[#1C2D4A] h-full rounded-full" style="width: 58.6%;"></div>
+                  </div>
+                  <span class="w-16 text-right font-bold text-slate-800">$28.5M</span>
+                </div>
+                <!-- Consolidación -->
+                <div class="flex items-center text-xs">
+                  <span class="w-28 text-slate-600 font-medium truncate">Consolidación</span>
+                  <div class="flex-1 bg-slate-100 rounded-full h-4 mx-3 overflow-hidden">
+                    <div class="bg-[#0284C7] h-full rounded-full" style="width: 24.6%;"></div>
+                  </div>
+                  <span class="w-16 text-right font-bold text-slate-800">$12.0M</span>
+                </div>
+                <!-- Sobrecostos -->
+                <div class="flex items-center text-xs">
+                  <span class="w-28 text-slate-600 font-medium truncate">Sobrecostos</span>
+                  <div class="flex-1 bg-slate-100 rounded-full h-4 mx-3 overflow-hidden">
+                    <div class="bg-[#EF4444] h-full rounded-full" style="width: 10.5%;"></div>
+                  </div>
+                  <span class="w-16 text-right font-bold text-slate-800">$5.1M</span>
+                </div>
+                <!-- Sistemas / TI -->
+                <div class="flex items-center text-xs">
+                  <span class="w-28 text-slate-600 font-medium truncate">Sistemas / TI</span>
+                  <div class="flex-1 bg-slate-100 rounded-full h-4 mx-3 overflow-hidden">
+                    <div class="bg-[#64748B] h-full rounded-full" style="width: 6.3%;"></div>
+                  </div>
+                  <span class="w-16 text-right font-bold text-slate-800">$3.0M</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Costo / Km por Flota -->
+            <div class="card-rutix p-6">
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <h3 class="text-sm font-bold text-slate-900">Árbol de Descomposición: Costo / Km</h3>
+                </div>
+                <span class="pill-filter bg-slate-100 text-slate-700">🔀 Decomposition Tree</span>
+              </div>
+              <div class="space-y-4 pt-3">
+                <!-- Tractomula -->
+                <div class="flex items-center text-xs">
+                  <span class="w-28 text-slate-600 font-medium truncate">Tractomula</span>
+                  <div class="flex-1 bg-slate-100 rounded-full h-4 mx-3 overflow-hidden">
+                    <div class="bg-[#0284C7] h-full rounded-full" style="width: 96%;"></div>
+                  </div>
+                  <span class="w-16 text-right font-bold text-slate-800">$4.800</span>
+                </div>
+                <!-- Camión C3 -->
+                <div class="flex items-center text-xs">
+                  <span class="w-28 text-slate-600 font-medium truncate">Camión C3</span>
+                  <div class="flex-1 bg-slate-100 rounded-full h-4 mx-3 overflow-hidden">
+                    <div class="bg-[#0284C7] h-full rounded-full" style="width: 72%;"></div>
+                  </div>
+                  <span class="w-16 text-right font-bold text-slate-800">$3.600</span>
+                </div>
+                <!-- Camión C2 -->
+                <div class="flex items-center text-xs">
+                  <span class="w-28 text-slate-600 font-medium truncate">Camión C2</span>
+                  <div class="flex-1 bg-slate-100 rounded-full h-4 mx-3 overflow-hidden">
+                    <div class="bg-[#0D9488] h-full rounded-full" style="width: 58%;"></div>
+                  </div>
+                  <span class="w-16 text-right font-bold text-slate-800">$2.900</span>
+                </div>
+                <!-- Turbo / Van -->
+                <div class="flex items-center text-xs">
+                  <span class="w-28 text-slate-600 font-medium truncate">Turbo / Van</span>
+                  <div class="flex-1 bg-slate-100 rounded-full h-4 mx-3 overflow-hidden">
+                    <div class="bg-[#0D9488] h-full rounded-full" style="width: 42%;"></div>
+                  </div>
+                  <span class="w-16 text-right font-bold text-slate-800">$2.100</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- VISTA 8: GESTIÓN DE INCIDENCIAS (KPI 4) -->
+        <!-- ============================================================== -->
+        <section id="view-kpi4" class="space-y-6 hidden">
+          <!-- 3 Cards Top -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+            <!-- Total Novedades -->
+            <div class="card-rutix p-6 flex flex-col justify-between">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-slate-500">Total Novedades</span>
+                <span class="w-6 h-6 rounded-full bg-cyan-100 text-cyan-700 flex items-center justify-center text-xs font-bold">!</span>
+              </div>
+              <div class="mt-4">
+                <div class="text-4xl font-extrabold text-slate-900">38 Casos</div>
+                <div class="mt-3 text-xs text-slate-400">3.06% del total de envíos</div>
+              </div>
+            </div>
+
+            <!-- Severidad Alta (Crítica) -->
+            <div class="card-rutix p-6 bg-[#FEF2F2] border border-[#FEE2E2] flex flex-col justify-between">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-red-600">Severidad Alta (Crítica)</span>
+                <span class="w-6 h-6 rounded-full bg-red-100 text-red-700 flex items-center justify-center text-xs">⚠️</span>
+              </div>
+              <div class="mt-4">
+                <div class="text-4xl font-extrabold text-red-700">8 Casos</div>
+                <div class="mt-3 text-xs text-red-600 font-semibold flex items-center gap-1">
+                  <span>▲ Acción Inmediata Requerida</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tiempo Prom. Resolución -->
+            <div class="card-rutix p-6 flex flex-col justify-between">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-slate-500">Tiempo Prom. Resolución</span>
+                <span class="w-6 h-6 rounded-full bg-cyan-100 text-cyan-700 flex items-center justify-center text-xs">⏱</span>
+              </div>
+              <div class="mt-4">
+                <div class="text-4xl font-extrabold text-slate-900">4.2 Horas</div>
+                <div class="mt-3 text-xs text-slate-400">SLA Cierre: &lt; 6 Horas</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2 Gráficos / Paneles de Pareto & Acciones -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Pareto -->
+            <div class="card-rutix p-6 lg:col-span-2">
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <h3 class="text-sm font-bold text-slate-900">Diagrama de Pareto Interactivo de Novedades</h3>
+                  <p class="text-xs text-slate-400">Distribución de 38 incidentes por tipología operativa</p>
+                </div>
+                <span class="pill-filter bg-blue-50 text-blue-700">📊 Pareto 80/20</span>
+              </div>
+              <div class="space-y-4 pt-3">
+                <!-- Retraso Ruta -->
+                <div class="flex items-center text-xs">
+                  <span class="w-28 text-slate-600 font-medium">Retraso Ruta</span>
+                  <div class="flex-1 bg-slate-100 rounded-full h-4 mx-3 overflow-hidden">
+                    <div class="bg-[#DC2626] h-full rounded-full" style="width: 90%;"></div>
+                  </div>
+                  <span class="w-8 text-right font-bold text-slate-800">18</span>
+                </div>
+                <!-- Doc. Incompleta -->
+                <div class="flex items-center text-xs">
+                  <span class="w-28 text-slate-600 font-medium">Doc. Incompleta</span>
+                  <div class="flex-1 bg-slate-100 rounded-full h-4 mx-3 overflow-hidden">
+                    <div class="bg-[#F59E0B] h-full rounded-full" style="width: 50%;"></div>
+                  </div>
+                  <span class="w-8 text-right font-bold text-slate-800">10</span>
+                </div>
+                <!-- Ausencia Cliente -->
+                <div class="flex items-center text-xs">
+                  <span class="w-28 text-slate-600 font-medium">Ausencia Cliente</span>
+                  <div class="flex-1 bg-slate-100 rounded-full h-4 mx-3 overflow-hidden">
+                    <div class="bg-[#14B8A6] h-full rounded-full" style="width: 25%;"></div>
+                  </div>
+                  <span class="w-8 text-right font-bold text-slate-800">5</span>
+                </div>
+                <!-- Falla Mecánica -->
+                <div class="flex items-center text-xs">
+                  <span class="w-28 text-slate-600 font-medium">Falla Mecánica</span>
+                  <div class="flex-1 bg-slate-100 rounded-full h-4 mx-3 overflow-hidden">
+                    <div class="bg-[#14B8A6] h-full rounded-full" style="width: 15%;"></div>
+                  </div>
+                  <span class="w-8 text-right font-bold text-slate-800">3</span>
+                </div>
+                <!-- Daño Empaque -->
+                <div class="flex items-center text-xs">
+                  <span class="w-28 text-slate-600 font-medium">Daño Empaque</span>
+                  <div class="flex-1 bg-slate-100 rounded-full h-4 mx-3 overflow-hidden">
+                    <div class="bg-[#14B8A6] h-full rounded-full" style="width: 10%;"></div>
+                  </div>
+                  <span class="w-8 text-right font-bold text-slate-800">2</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Acciones Tácticas y Filtros -->
+            <div class="card-rutix p-6 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between mb-4">
+                  <h3 class="text-sm font-bold text-slate-900">Acciones Tácticas y Filtros</h3>
+                  <span class="pill-filter bg-red-50 text-red-600">⚡ SLA Breach</span>
+                </div>
+                <div class="space-y-3.5">
+                  <!-- Botón Filtrar Solo Casos Críticos -->
+                  <div onclick="filtrarSoloCriticosDesdeKPI4()" class="p-3.5 bg-slate-50 hover:bg-red-50 border border-slate-200 hover:border-red-200 rounded-xl cursor-pointer transition">
+                    <p class="text-xs font-bold text-slate-900 flex items-center justify-between">
+                      <span>Filtrar Solo Casos Críticos</span>
+                      <span class="text-red-600 font-extrabold text-sm">→</span>
+                    </p>
+                    <p class="text-[11px] text-slate-400 mt-1">Aísla en operaciones las 8 guías de Severidad Alta.</p>
+                  </div>
+
+                  <!-- Impacto Financiero -->
+                  <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-xl">
+                    <span class="text-[10px] uppercase font-bold text-slate-400">Impacto Financiero Estimado</span>
+                    <p class="text-lg font-extrabold text-slate-900 mt-0.5">$180.000 COP</p>
+                  </div>
+
+                  <!-- Protocolo Automatizado -->
+                  <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-xl">
+                    <span class="text-[10px] uppercase font-bold text-slate-400">Protocolo Automatizado</span>
+                    <p class="text-xs text-slate-600 mt-1">Notificación por WhatsApp al cliente en retrasos &gt; 2h.</p>
+                  </div>
+                </div>
+              </div>
+              <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
+                <span>Webhook: <b class="text-emerald-600 font-semibold">Online</b></span>
+                <span class="text-blue-600 font-medium cursor-pointer" onclick="showInfoToast('Logs de alertas WhatsApp verificados')">Ver Logs ↗</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- MODAL / TOAST DE NOTIFICACIONES -->
+  <!-- ============================================================== -->
+  <div id="toast-notification" class="fixed bottom-6 right-6 bg-slate-900 text-white px-5 py-3.5 rounded-2xl shadow-xl flex items-center gap-3 text-xs z-50 transform translate-y-24 opacity-0 transition-all duration-300 pointer-events-none">
+    <span class="w-2.5 h-2.5 rounded-full bg-blue-400 animate-pulse"></span>
+    <span id="toast-message">Notificación</span>
+  </div>
+
+  <!-- MODAL DE DETALLE DE GUÍA -->
+  <div id="guia-modal" class="fixed inset-0 modal-backdrop hidden items-center justify-center p-4 z-50">
+    <div class="card-rutix max-w-md w-full p-6 shadow-2xl relative">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full bg-blue-500"></span>
+          <h3 id="modal-guia-title" class="text-base font-bold text-slate-900">Detalle de Operación</h3>
+        </div>
+        <button onclick="closeGuiaModal()" class="text-slate-400 hover:text-slate-600 text-lg font-bold">✕</button>
+      </div>
+      <div id="modal-guia-body" class="py-4 space-y-3 text-xs text-slate-600">
+        <!-- Injected details -->
+      </div>
+      <div class="pt-3 border-t border-slate-100 flex justify-end gap-2">
+        <button onclick="closeGuiaModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-xs">Cerrar</button>
+        <button onclick="notifyTransportistaModal()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg text-xs">Contactar Transportista</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- LÓGICA JAVASCRIPT DEL DASHBOARD -->
+  <!-- ============================================================== -->
+  <script>
+    // --- ESTADO GLOBAL REACTIVO ---
+    const appState = {
+      currentView: 'resumen',
+      role: 'CEO',
+      isMobileView: false,
+      selectedTransportista: null,
+      currentSeverityFilter: 'TODAS',
+      selectedTimePeriod: 'OCT'
+    };
+
+    // --- DATASET OPERACIONAL ---
+    const datasetOperaciones = [
+      { guia: 'GD-20418', transportista: 'TransCaribe', ruta: 'Cartagena – Bogotá', severidad: 'ALTA', incidente: 'Retraso > 48 h', valor: '$450.000', fecha: '25 Oct, 14:30' },
+      { guia: 'GD-20431', transportista: 'Rápido Andino', ruta: 'Bogotá – Medellín', severidad: 'MEDIA', incidente: 'Daño parcial', valor: '$280.000', fecha: '25 Oct, 13:10' },
+      { guia: 'GD-20447', transportista: 'LogiNorte', ruta: 'Barranquilla – Cartagena', severidad: 'BAJA', incidente: 'Cambio de ventana', valor: '$190.000', fecha: '25 Oct, 11:45' },
+      { guia: 'GD-20452', transportista: 'Vía Express', ruta: 'Cali – Bogotá', severidad: 'ALTA', incidente: 'Carga no entregada', valor: '$520.000', fecha: '25 Oct, 09:40' },
+      { guia: 'GD-20466', transportista: 'TransCaribe', ruta: 'Cartagena – Medellín', severidad: 'MEDIA', incidente: 'Retraso 12–24 h', valor: '$310.000', fecha: '24 Oct, 18:20' },
+      { guia: 'GD-20473', Rápido: 'Rápido Andino', transportista: 'Rápido Andino', ruta: 'Medellín – Cali', severidad: 'BAJA', incidente: 'Documento incompleto', valor: '$150.000', fecha: '24 Oct, 16:00' },
+      { guia: 'GD-20490', transportista: 'LogiNorte', ruta: 'Barranquilla – Bogotá', severidad: 'MEDIA', incidente: 'Daño parcial', valor: '$340.000', fecha: '24 Oct, 11:30' },
+      { guia: 'GD-20502', transportista: 'Vía Express', ruta: 'Bogotá – Cali', severidad: 'BAJA', incidente: 'Dirección errónea', valor: '$210.000', fecha: '23 Oct, 15:50' }
+    ];
+
+    // --- ENRUTAMIENTO Y VISTAS ---
+    const views = ['resumen', 'direccion', 'gerencia', 'operaciones', 'kpi1', 'kpi2', 'kpi3', 'kpi4'];
+    const viewTitles = {
+      'resumen': 'Resumen ejecutivo',
+      'direccion': 'Dirección General',
+      'gerencia': 'Gerencia de País',
+      'operaciones': 'Operaciones logísticas',
+      'kpi1': 'KPI 1: Envíos Monitoreados',
+      'kpi2': 'KPI 2: Entregas a Tiempo (OTD)',
+      'kpi3': 'KPI 3: Costos Logísticos & ROI (Excel)',
+      'kpi4': 'KPI 4: Gestión de Incidencias'
+    };
+
+    function navigate(viewId) {
+      if (!views.includes(viewId)) return;
+      appState.currentView = viewId;
+
+      views.forEach(v => {
+        const sec = document.getElementById(`view-${v}`);
+        const navBtn = document.getElementById(`nav-${v}`);
+        if (sec) sec.classList.toggle('hidden', v !== viewId);
+        if (navBtn) {
+          navBtn.classList.toggle('nav-active', v === viewId);
+        }
+      });
+
+      const breadcrumb = document.getElementById('breadcrumb-title');
+      if (breadcrumb) {
+        breadcrumb.innerText = viewTitles[viewId] || '';
+      }
+
+      // Renderizar gráficos si corresponde a la vista
+      renderChartsForView(viewId);
+
+      // Auto-cerrar sidebar en móvil
+      if (window.innerWidth < 1024 && !appState.isMobileView) {
+        document.getElementById('sidebar').classList.add('-ml-64');
+      }
+
+      // Scroll top al canvas
+      document.getElementById('content-scroll').scrollTop = 0;
+    }
+
+    // --- INSTANCIAS DE GRÁFICOS CHART.JS ---
+    const chartInstances = {};
+
+    function destroyChart(id) {
+      if (chartInstances[id]) {
+        chartInstances[id].destroy();
+        delete chartInstances[id];
+      }
+    }
+
+    function renderChartsForView(viewId) {
+      // 1. RESUMEN EJECUTIVO
+      if (viewId === 'resumen') {
+        // Línea Cumplimiento
+        destroyChart('chart-resumen-line');
+        const ctxLine = document.getElementById('chart-resumen-line').getContext('2d');
+        chartInstances['chart-resumen-line'] = new Chart(ctxLine, {
+          type: 'line',
+          data: {
+            labels: ['Oct 16', 'Oct 17', 'Oct 18', 'Oct 19', 'Oct 20', 'Oct 21', 'Oct 22', 'Oct 23', 'Oct 24', 'Oct 25'],
+            datasets: [
+              {
+                label: 'Cumplimiento (%)',
+                data: [87.6, 89.8, 89.2, 92.0, 94.3, 93.1, 92.4, 94.7, 95.0, 95.8],
+                borderColor: '#EA580C',
+                backgroundColor: 'rgba(234, 88, 12, 0.05)',
+                borderWidth: 2.5,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 4,
+                pointBackgroundColor: '#EA580C',
+                pointHoverRadius: 6
+              },
+              {
+                label: 'Meta SLA (95%)',
+                data: [95, 95, 95, 95, 95, 95, 95, 95, 95, 95],
+                borderColor: '#16A34A',
+                borderWidth: 1.5,
+                borderDash: [5, 5],
+                pointRadius: 0,
+                fill: false
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y}%`
+                }
+              }
+            },
+            scales: {
+              y: {
+                min: 85,
+                max: 100,
+                grid: { color: '#F1F5F9' },
+                ticks: { callback: v => v + '%' }
+              },
+              x: { grid: { display: false } }
+            }
+          }
+        });
+
+        // Donut Estado Envíos
+        destroyChart('chart-resumen-donut');
+        const ctxDonut = document.getElementById('chart-resumen-donut').getContext('2d');
+        chartInstances['chart-resumen-donut'] = new Chart(ctxDonut, {
+          type: 'doughnut',
+          data: {
+            labels: ['Entregados', 'En tránsito', 'Pendientes', 'Cancelados'],
+            datasets: [{
+              data: [72, 14, 9, 5],
+              backgroundColor: ['#1C2D4A', '#EA580C', '#84CC16', '#3B82F6'],
+              borderWidth: 0,
+              cutout: '74%'
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: ctx => ` ${ctx.label}: ${ctx.parsed}% (${Math.round(ctx.parsed * 12.4)} envíos)`
+                }
+              }
+            }
+          }
+        });
+      }
+
+      // 2. DIRECCIÓN GENERAL
+      if (viewId === 'direccion') {
+        // Costos Logísticos
+        destroyChart('chart-ceo-costos');
+        const ctxCostos = document.getElementById('chart-ceo-costos').getContext('2d');
+        chartInstances['chart-ceo-costos'] = new Chart(ctxCostos, {
+          type: 'line',
+          data: {
+            labels: ['May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct'],
+            datasets: [
+              {
+                label: 'Costo Real',
+                data: [422, 407, 412, 392, 388, 372],
+                borderColor: '#EA580C',
+                backgroundColor: 'rgba(234, 88, 12, 0.04)',
+                borderWidth: 2.5,
+                tension: 0.35,
+                fill: true,
+                pointRadius: 4,
+                pointBackgroundColor: '#EA580C'
+              },
+              {
+                label: 'Meta Presupuesto (380)',
+                data: [380, 380, 380, 380, 380, 380],
+                borderColor: '#16A34A',
+                borderDash: [5, 5],
+                pointRadius: 0
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: { label: ctx => ` ${ctx.dataset.label}: $${ctx.parsed.y} M COP` }
+              }
+            },
+            scales: {
+              y: {
+                min: 360,
+                max: 430,
+                grid: { color: '#F1F5F9' },
+                ticks: { callback: v => '$' + v + 'M' }
+              },
+              x: { grid: { display: false } }
+            }
+          }
+        });
+
+        // CSAT Line
+        destroyChart('chart-ceo-csat');
+        const ctxCsat = document.getElementById('chart-ceo-csat').getContext('2d');
+        chartInstances['chart-ceo-csat'] = new Chart(ctxCsat, {
+          type: 'line',
+          data: {
+            labels: ['May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct'],
+            datasets: [
+              {
+                label: 'CSAT',
+                data: [4.05, 4.18, 4.18, 4.31, 4.42, 4.50],
+                borderColor: '#EA580C',
+                backgroundColor: 'rgba(234, 88, 12, 0.04)',
+                borderWidth: 2.5,
+                tension: 0.35,
+                fill: true,
+                pointRadius: 4,
+                pointBackgroundColor: '#EA580C'
+              },
+              {
+                label: 'Meta CSAT (4.5)',
+                data: [4.5, 4.5, 4.5, 4.5, 4.5, 4.5],
+                borderColor: '#16A34A',
+                borderDash: [5, 5],
+                pointRadius: 0
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y} / 5.0` }
+              }
+            },
+            scales: {
+              y: {
+                min: 4.0,
+                max: 4.6,
+                grid: { color: '#F1F5F9' },
+                ticks: { callback: v => v }
+              },
+              x: { grid: { display: false } }
+            }
+          }
+        });
+      }
+
+      // 5. KPI 1: ENVIOS MONITOREADOS
+      if (viewId === 'kpi1') {
+        destroyChart('chart-kpi1-evolucion');
+        const ctxKpi1 = document.getElementById('chart-kpi1-evolucion').getContext('2d');
+        chartInstances['chart-kpi1-evolucion'] = new Chart(ctxKpi1, {
+          type: 'line',
+          data: {
+            labels: ['Oct 16', 'Oct 17', 'Oct 18', 'Oct 19', 'Oct 20', 'Oct 21', 'Oct 22', 'Oct 23', 'Oct 24', 'Oct 25'],
+            datasets: [{
+              label: 'Envíos Despachados',
+              data: [110, 118, 124, 115, 140, 134, 129, 136, 130, 135],
+              borderColor: '#0284C7',
+              backgroundColor: 'rgba(2, 132, 199, 0.08)',
+              borderWidth: 2.5,
+              tension: 0.35,
+              fill: true,
+              pointRadius: ctx => (ctx.dataIndex === 4 ? 6 : 3),
+              pointBackgroundColor: ctx => (ctx.dataIndex === 4 ? '#0F172A' : '#0284C7'),
+              pointBorderWidth: ctx => (ctx.dataIndex === 4 ? 3 : 1)
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: ctx => ` ${ctx.parsed.y} envíos`
+                }
+              }
+            },
+            scales: {
+              y: { min: 90, max: 150, grid: { color: '#F1F5F9' } },
+              x: { grid: { display: false } }
+            }
+          }
+        });
+      }
+
+      // 6. KPI 2: CUMPLIMIENTO OTD
+      if (viewId === 'kpi2') {
+        destroyChart('chart-kpi2-otdline');
+        const ctxOtdLine = document.getElementById('chart-kpi2-otdline').getContext('2d');
+        chartInstances['chart-kpi2-otdline'] = new Chart(ctxOtdLine, {
+          type: 'line',
+          data: {
+            labels: ['Oct 16', 'Oct 17', 'Oct 18', 'Oct 19', 'Oct 20', 'Oct 21', 'Oct 22', 'Oct 23', 'Oct 24', 'Oct 25'],
+            datasets: [
+              {
+                label: 'OTD Real',
+                data: [91.5, 92.4, 93.1, 92.0, 94.6, 93.5, 92.8, 93.8, 93.2, 93.5],
+                borderColor: '#0284C7',
+                borderWidth: 2.5,
+                tension: 0.35,
+                pointRadius: 3,
+                pointBackgroundColor: '#0284C7'
+              },
+              {
+                label: 'Meta SLA 95%',
+                data: [95, 95, 95, 95, 95, 95, 95, 95, 95, 95],
+                borderColor: '#16A34A',
+                borderDash: [5, 5],
+                borderWidth: 1.5,
+                pointRadius: 0
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              y: { min: 88, max: 98, ticks: { callback: v => v + '%' }, grid: { color: '#F1F5F9' } },
+              x: { grid: { display: false } }
+            }
+          }
+        });
+      }
+    }
+
+    // --- TABLA DE OPERACIONES LOGÍSTICAS ---
+    function filterOperaciones(sev) {
+      appState.currentSeverityFilter = sev;
+      ['TODAS', 'ALTA', 'MEDIA', 'BAJA'].forEach(s => {
+        const btn = document.getElementById(`btn-sev-${s}`);
+        if (btn) {
+          if (s === sev) {
+            btn.className = 'pill-filter bg-[#1C2D4A] text-white shadow-sm';
+          } else {
+            btn.className = 'pill-filter bg-white text-slate-700 border border-slate-200 hover:bg-slate-50';
+          }
+        }
+      });
+
+      const filtered = sev === 'TODAS' ? datasetOperaciones : datasetOperaciones.filter(d => d.severidad === sev);
+      renderOperacionesTable(filtered);
+    }
+
+    function renderOperacionesTable(data) {
+      const tbody = document.getElementById('operaciones-table-body');
+      if (!tbody) return;
+
+      tbody.innerHTML = data.map(row => {
+        let badgeClass = 'bg-[#DCFCE7] text-[#166534]';
+        if (row.severidad === 'ALTA') badgeClass = 'bg-[#FEE2E2] text-[#DC2626] font-bold';
+        if (row.severidad === 'MEDIA') badgeClass = 'bg-[#FEF3C7] text-[#B45309] font-bold';
+
+        return `
+          <tr class="hover:bg-slate-50/80 transition cursor-pointer" onclick="openGuiaModal('${row.guia}')">
+            <td class="py-3.5 font-bold text-slate-900">${row.guia}</td>
+            <td class="py-3.5 font-medium text-slate-700">${row.transportista}</td>
+            <td class="py-3.5 text-slate-600">${row.ruta}</td>
+            <td class="py-3.5">
+              <span class="badge-pill ${badgeClass}">${row.severidad}</span>
+            </td>
+            <td class="py-3.5 text-slate-700 font-medium">${row.incidente}</td>
+            <td class="py-3.5 text-right">
+              <button onclick="event.stopPropagation(); openGuiaModal('${row.guia}')" class="text-xs font-semibold text-blue-600 hover:text-blue-800">
+                Detalles ↗
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // --- ACCIÓN DE KPI 4 A OPERACIONES ---
+    function filtrarSoloCriticosDesdeKPI4() {
+      navigate('operaciones');
+      filterOperaciones('ALTA');
+      showInfoToast('Filtro activado: Mostrando 2 incidentes de Severidad ALTA');
+    }
+
+    // --- CROSS-FILTERING EN KPI 2 (TRANSPORTISTAS) ---
+    function handleCrossFilterTransportista(name, otd) {
+      appState.selectedTransportista = name;
+      showInfoToast(`Cross-Filter Activado: ${name} (OTD: ${otd}%). Evaluando 286 envíos asociados...`);
+    }
+
+    // --- SIMULADOR RLS (ROW-LEVEL SECURITY) ---
+    function applyRLS(role) {
+      appState.role = role;
+      if (role === 'OPERACIONES') {
+        navigate('operaciones');
+        showInfoToast('RLS Activado: Perfil Jefe de Operaciones (Restringido a despachos y ruta)');
+      } else if (role === 'GERENCIA') {
+        navigate('gerencia');
+        showInfoToast('RLS Activado: Perfil Gerencia de País (Ciudades y volumen territorial)');
+      } else {
+        navigate('resumen');
+        showInfoToast('RLS Activado: Perfil Dirección General (Consolidado multivariable completo)');
+      }
+    }
+
+    // --- FILTROS DE CIUDAD EN GERENCIA ---
+    function filterGerenciaCity(city) {
+      showInfoToast(`Filtro Hub Urbano: ${city} aplicado.`);
+    }
+
+    // --- SLICER TEMPORAL GLOBAL ---
+    function changeTimePeriod(period) {
+      appState.selectedTimePeriod = period;
+      showInfoToast(`Slicer Global: Período ${period} 2026 cargado en el modelo DAX.`);
+    }
+
+    // --- TOGGLE MODO MÓVIL ---
+    function toggleMobileSimulator() {
+      appState.isMobileView = !appState.isMobileView;
+      const root = document.getElementById('app-container');
+      const sb = document.getElementById('sidebar');
+
+      if (appState.isMobileView) {
+        root.classList.add('mobile-mode');
+        sb.classList.add('-ml-64');
+        showInfoToast('Simulador Móvil Activado: Viewport táctil para supervisores en terreno.');
+      } else {
+        root.classList.remove('mobile-mode');
+        sb.classList.remove('-ml-64');
+        showInfoToast('Modo Desktop / Fullscreen restablecido.');
+      }
+      // Re-render charts with responsive adjustment
+      setTimeout(() => {
+        renderChartsForView(appState.currentView);
+      }, 350);
+    }
+
+    function toggleSidebar() {
+      const sb = document.getElementById('sidebar');
+      sb.classList.toggle('-ml-64');
+    }
+
+    // --- BÚSQUEDA GLOBAL ---
+    function handleGlobalSearch(event) {
+      if (event.key === 'Enter') {
+        const query = event.target.value.trim().toUpperCase();
+        if (!query) return;
+
+        const match = datasetOperaciones.find(d => d.guia.includes(query) || d.transportista.toUpperCase().includes(query) || d.ruta.toUpperCase().includes(query));
+        if (match) {
+          navigate('operaciones');
+          openGuiaModal(match.guia);
+        } else {
+          showInfoToast(`No se encontraron registros para "${query}".`);
+        }
+      }
+    }
+
+    // --- TOAST NOTIFICATIONS ---
+    let toastTimeout;
+    function showInfoToast(msg) {
+      const toast = document.getElementById('toast-notification');
+      const msgElem = document.getElementById('toast-message');
+      msgElem.innerText = msg;
+
+      clearTimeout(toastTimeout);
+      toast.classList.remove('translate-y-24', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+
+      toastTimeout = setTimeout(() => {
+        toast.classList.add('translate-y-24', 'opacity-0');
+        toast.classList.remove('translate-y-0', 'opacity-100');
+      }, 4000);
+    }
+
+    // --- MODAL DE DETALLE DE GUÍA ---
+    function openGuiaModal(guiaId) {
+      const row = datasetOperaciones.find(d => d.guia === guiaId) || datasetOperaciones[0];
+      const modal = document.getElementById('guia-modal');
+      const title = document.getElementById('modal-guia-title');
+      const body = document.getElementById('modal-guia-body');
+
+      title.innerText = `Expediente Logístico: ${row.guia}`;
+      body.innerHTML = `
+        <div class="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
+          <div><span class="text-slate-400">Transportista:</span> <p class="font-bold text-slate-800">${row.transportista}</p></div>
+          <div><span class="text-slate-400">Severidad:</span> <p class="font-bold text-slate-800">${row.severidad}</p></div>
+          <div><span class="text-slate-400">Ruta:</span> <p class="font-bold text-slate-800">${row.ruta}</p></div>
+          <div><span class="text-slate-400">Declarado:</span> <p class="font-bold text-slate-800">${row.valor}</p></div>
+        </div>
+        <div class="pt-2">
+          <p class="text-slate-400 font-semibold mb-1">Diagnóstico del Incidente:</p>
+          <p class="p-2.5 bg-amber-50 border border-amber-100 rounded-lg text-amber-900 font-medium">${row.incidente}</p>
+        </div>
+        <div class="text-[11px] text-slate-400">
+          Última actualización telemática GPS: <b>${row.fecha}</b>
+        </div>
+      `;
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeGuiaModal() {
+      const modal = document.getElementById('guia-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function notifyTransportistaModal() {
+      closeGuiaModal();
+      showInfoToast('Protocolo de contingencia ejecutado: Enlace satelital enviado al transportista vía WhatsApp.');
+    }
+
+    // --- INICIALIZACIÓN ---
+    document.addEventListener('DOMContentLoaded', () => {
+      renderOperacionesTable(datasetOperaciones);
+      renderChartsForView('resumen');
+    });
+  </script>
+</body>
+</html>
+
